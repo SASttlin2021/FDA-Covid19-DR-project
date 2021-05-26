@@ -36,6 +36,7 @@ libname public  cas caslib="public"       ;
 proc casutil incaslib="repositioning" outcaslib="repositioning" sessref="&sessionName";
 	load casdata="dbProteins.csv" casout="DBProteins" replace;
 	load casdata="stringPP.csv" casout="stringpp" replace;
+	load casdata="Truth.csv" casout="truth" replace;
 quit;
 
 
@@ -123,13 +124,14 @@ cas tsnesession terminate;
 
 %macro retrieve_candidates(embeddings=embed.network2_embeddings);
 
-%let embeddings=embed.network2_embeddings;
+%let embeddings=embed.network1_embeddings;
 
 %let sessionName = localsession;
 cas localsession;
 libname casuser cas caslib="casuser";
-libname embed cas caslib="embed";
+libname embed cas caslib="embedding";
 libname public cas caslib="public";
+libname repo cas caslib="repositioning";
 
 data work.fastknn_data;
 	set &embeddings;
@@ -142,18 +144,19 @@ proc sql;
 
 	create table fastknn_query as
 	select d.* 
-	from public.truth as t inner join work.fastknn_data as d
+	from repo.truth as t inner join work.fastknn_data as d
 	on d.node = t.drugbank_id;
 quit;
 
 proc casutil outcaslib="casuser";
-	load data=work.fastknn_data;
-	load data=work.fastknn_query;
+	load data=work.fastknn_data replace;
+	load data=work.fastknn_query replace;
 quit; 
 
 proc fastknn data=casuser.fastknn_data query=casuser.fastknn_query k=10 outdist=casuser.fastknn_dist;
 	id nodeid;
 	input vec_:;
+	output out=casuser.nearest_neighbors;
 run;
 
 proc sql;
