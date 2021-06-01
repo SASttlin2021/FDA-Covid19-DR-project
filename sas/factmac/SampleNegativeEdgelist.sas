@@ -49,15 +49,15 @@ proc sort data=casuser.negative_edges out=casuser.negative_edges nodupkey;
 run;
 	
 
+/* Create index on table for faster processing */
 proc casutil;
 	index casdata="negative_edges" casout="negative_edges" replace indexvars={"head", "tail"};
 	index casdata="edges" casout="edges" replace indexvars={"head", "tail"};
 run;
 
+
 /* Remove edges from the negative edgelist which appear in the positive edgelist */
-
-
-data casuser.negative_edges_only;
+data casuser.negative_edges;
 	merge casuser.negative_edges (in=inneg) casuser.edges (in=inpos);
 	by head tail;
 	if not inpos;
@@ -66,7 +66,9 @@ run;
 
 %if &testscript = 0 %then %do;
 proc casutil incaslib="casuser" outcaslib="repositioning";
-	save casdata="negative_edges_only" casout="negative_edges.csv" replace;
+	save casdata="negative_edges" casout="negative_edges.csv" replace;
+	droptable casdata="negative1";
+	droptable casdata="negative2";
 run;
 %end;
 
