@@ -8,3 +8,6 @@ data/**/*.csv
 # results of submitting sas code in background
 /sas/*.log
 /sas/*.html
+
+# editor config
+.sasjslint

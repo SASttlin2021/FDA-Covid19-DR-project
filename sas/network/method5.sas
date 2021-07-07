@@ -30,7 +30,7 @@ proc network
       vector         = true
       nSamples       = 10000000
       convergenceThreshold = 0.001
-	  source = "protein:Q5HYI8" /* Just pick a random one so it doesnt compute every distance */
+	  source = &sars_cov_2 /* Just pick a random one so it doesnt compute every distance */
    ;
 run;
 
