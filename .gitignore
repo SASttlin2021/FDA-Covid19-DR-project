@@ -4,6 +4,8 @@
 # datasets are generally too large for git, need to be transferred some other way
 data/**/*.txt
 data/**/*.csv
+data/**/*.sashdat
+data/**/*.sas7bdat
 
 # results of submitting sas code in background
 /sas/*.log
