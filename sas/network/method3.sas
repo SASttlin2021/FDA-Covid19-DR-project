@@ -37,9 +37,9 @@ proc network
 run;
 
 proc casutil;
-    droptable incaslib="embedding" casdata="network3_embeddings" quiet;
-    promote incaslib="private" casdata="network3_embeddings" outcaslib="embedding" casout="network3_embeddings";
-    save incaslib="embedding" outcaslib="embedding" casdata="network3_embeddings" casout="network3_embeddings.csv" replace;
+    droptable incaslib="embedding" casdata="network1_embeddings" quiet;
+    save incaslib="private" outcaslib="embedding" casdata="network3_embeddings" casout="network3_embeddings.csv" replace;
+	load incaslib="embedding" casdata="network3_embeddings.csv" outcaslib="embedding" casout="network3_embeddings";
 quit;
 
 proc casutil incaslib="private";

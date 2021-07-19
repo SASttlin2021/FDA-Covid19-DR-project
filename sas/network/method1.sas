@@ -79,8 +79,8 @@ run;
 
 proc casutil;
 	droptable incaslib="embedding" casdata="network1_embeddings" quiet;
-	promote incaslib="private" casdata="drugEmbeddings" outcaslib="embedding" casout="network1_embeddings";
-	save incaslib="embedding" outcaslib="embedding" casdata="network1_embeddings" casout="network1_embeddings.csv" replace;
+   save incaslib="private" outcaslib="embedding" casdata="drugEmbeddings" casout="network1_embeddings.csv" replace;
+	load incaslib="embedding" casdata="network1_embeddings.csv" outcaslib="embedding" casout="network1_embeddings";
 
 	save incaslib="private" casdata="druglinks" replace;
 	save incaslib="private" casdata="druglinkscommonproteins" replace;

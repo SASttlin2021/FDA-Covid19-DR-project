@@ -88,7 +88,7 @@ quit;
 
 proc casutil;
     droptable incaslib="repositioning" casdata="&output";
-    load data=work.labeled_candidates outcaslib="repositioning" casout="&output" promote;
+    load data=work.labeled_candidates outcaslib="repositioning" casout="&output";
 quit;
 
 caslib private drop;

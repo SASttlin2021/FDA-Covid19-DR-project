@@ -46,7 +46,7 @@ quit;
 
 proc casutil;
   droptable incaslib="repositioning" casdata="&output";
-  load data=work.candidates outcaslib="repositioning" casout="&output" promote;
+  load data=work.candidates outcaslib="repositioning" casout="&output";
 quit;
 
 proc datasets library=work noprint;

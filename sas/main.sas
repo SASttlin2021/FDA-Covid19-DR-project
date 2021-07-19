@@ -40,12 +40,12 @@ cas &sessionName;
 /*     - repositioning: the source data (after cleaning)                                    */
 /*     - embedding: where we land the embeddings from our various methods                   */
 /*     - visualization: where tables to be visualized in Visual Analytics go                */
-caslib repositioning datasource=(srctype="path") path="&datapath/repositioning" global sessref=&sessionName;
-caslib gnbr          datasource=(srctype="path") path="&datapath/GNBR"          global sessref=&sessionName;
-caslib output        datasource=(srctype="path") path="&datapath/output"        global sessref=&sessionName;
+caslib repositioning datasource=(srctype="path") path="&datapath/repositioning" sessref=&sessionName;
+caslib gnbr          datasource=(srctype="path") path="&datapath/GNBR"          sessref=&sessionName;
+caslib output        datasource=(srctype="path") path="&datapath/output"        sessref=&sessionName;
 
 /* Create temporary caslib for saving intermediate data */
-caslib embedding   datasource=(srctype="path") path="&datapath/intermediate/embedding" global sessref=&sessionName;
+caslib embedding   datasource=(srctype="path") path="&datapath/intermediate/embedding" sessref=&sessionName;
 
 /* Bind sas libnames to caslibs so sas can read and write data in cas */
 libname repo    cas caslib="repositioning";
@@ -69,21 +69,14 @@ libname output  cas caslib="output"       ;
 %end;
 
 proc casutil incaslib="repositioning" outcaslib="repositioning" sessref="&sessionName";
-    droptable casdata="DBProteins";
-    droptable casdata="stringpp";
-    droptable casdata="truth";
-	droptable casdata="sars_cov_2_proteins";
-
-    load casdata="dbProteins.csv" casout="DBProteins" promote;
-    load casdata="stringPP.csv" casout="stringpp" promote;
-    load casdata="Truth.csv" casout="truth" promote;
-	load casdata="sars_cov_2_proteins.csv" casout="sars_cov_2_proteins" promote;
+    load casdata="dbProteins.csv" casout="DBProteins" replace;
+    load casdata="stringPP.csv" casout="stringpp" replace;
+    load casdata="Truth.csv" casout="truth" replace;
+    load casdata="sars_cov_2_proteins.csv" casout="sars_cov_2_proteins" replace;
 quit;
 
 proc casutil incaslib="gnbr" outcaslib="gnbr" sessref="&sessionName";
-    droptable casdata="GeneDiseaseComplete";
-
-    load casdata="GeneDiseaseComplete.csv" casout="GeneDiseaseComplete" promote
+    load casdata="GeneDiseaseComplete.csv" casout="GeneDiseaseComplete" replace
         vars=("UniProtID", "SecondEntityDBID");
 quit;
 

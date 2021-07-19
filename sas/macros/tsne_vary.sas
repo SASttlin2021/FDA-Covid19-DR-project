@@ -58,7 +58,6 @@ data private.tsne_all;
     by drugbank_id;
 run;
 
-	
 data &dataout(promote=YES);
     set private.tsne_all;
 run;
