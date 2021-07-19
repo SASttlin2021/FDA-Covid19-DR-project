@@ -57,7 +57,8 @@ proc datasets;
 	delete avg_p;
 	delete merged;
 run;
-
-%mend evaluate_ap;
+quit;
 
 caslib private drop;
+%mend evaluate_ap;
+

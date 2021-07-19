@@ -1,9 +1,15 @@
 /********************************************/
 /*     Macro Variables for User to Set      */
 /********************************************/
-%let parentpath=/home/sasdemo/FDA-Covid19-DR-project;
+/* Path to where the code is saved, either on disk or the folderpath in SAS content */
+%let codepath=/home/sasdemo/FDA-Covid19-DR-project/sas;
+/* Path to where the data is and will be saved. All caslibs should be a **subfolder** of this.*/
+%let datapath=/home/sasdemo/FDA-Covid19-DR-project/data;
+/* Is the sas code saved in SAS content or on disk? */
+%let files_in_content = 0;
+/* Run script in test mode when 1, is quicker and doesnt write to disk.*/
 %let testscript=0;
-%let parent=1;
+/* Run the data prep steps when 1. This is slow and unnecesary if source data has not changed.*/
 %let prep=0;
 /********************************************/
 
@@ -13,35 +19,41 @@ OPTIONS SOURCE2 MPRINT MPRINTNEST;
 cas &sessionName;
 
 %let sars_cov_2="MESH:D000086402";
+%let parent=1;
 
 /* Code Location */
 /* Defines the paths to other sas scripts so we can "%INCLUDE" them later */
-filename MAIN	 "&parentpath/sas";
-filename FACTMAC "&parentpath/sas/factmac";
-filename NETWORK "&parentpath/sas/network";
-filename MACROS  "&parentpath/sas/macros" ;
+%if &files_in_content %then %do;
+    filename MAIN    filesrvc folderpath="&codepath"
+    filename FACTMAC filesrvc folderpath="&codepath/factmac";
+    filename NETWORK filesrvc folderpath="&codepath/network";
+    filename MACROS  filesrvc folderpath="&codepath/macros" ;
+%end; %else %do;
+    filename MAIN	 "&codepath";
+    filename FACTMAC "&codepath/factmac";
+    filename NETWORK "&codepath/network";
+    filename MACROS  "&codepath/macros" ;
+%end;
 
 /* Data Location */
 /* Define caslib locations so that cas can read and write data on disk                      */
 /*     - repositioning: the source data (after cleaning)                                    */
 /*     - embedding: where we land the embeddings from our various methods                   */
 /*     - visualization: where tables to be visualized in Visual Analytics go                */
-caslib repositioning datasource=(srctype="path") path="&parentpath/data/repositioning" global sessref=&sessionName;
-caslib embedding     datasource=(srctype="path") path="&parentpath/data/embedding"     global sessref=&sessionName;
-caslib visualization datasource=(srctype="path") path="&parentpath/data/visualization" global sessref=&sessionName;
-caslib gnbr          datasource=(srctype="path") path="&parentpath/data/GNBR"          global sessref=&sessionName;
+caslib repositioning datasource=(srctype="path") path="&datapath/repositioning" global sessref=&sessionName;
+caslib gnbr          datasource=(srctype="path") path="&datapath/GNBR"          global sessref=&sessionName;
+caslib output        datasource=(srctype="path") path="&datapath/output"        global sessref=&sessionName;
 
 /* Create temporary caslib for saving intermediate data */
-caslib checkpoint    datasource=(srctype="path") path="&parentpath/data/checkpoint"    global sessref=&sessionName;
+caslib embedding   datasource=(srctype="path") path="&datapath/intermediate/embedding" global sessref=&sessionName;
 
 /* Bind sas libnames to caslibs so sas can read and write data in cas */
 libname repo    cas caslib="repositioning";
 libname embed   cas caslib="embedding"    ;
-libname visual  cas caslib="visualization";
 libname casuser cas caslib="casuser"      ;
 libname public  cas caslib="public"       ;
 libname gnbr    cas caslib="gnbr"         ;
-libname check   cas caslib="checkpoint"   ;
+libname output  cas caslib="output"       ;
 
 /* * * * * * * * * * Load Data * * * * * * * * * * * * * * * * */
 /****************************************************************************************/
@@ -53,7 +65,7 @@ libname check   cas caslib="checkpoint"   ;
 /* Currently only keeping head and tail entities and not relationship type 				*/
 /****************************************************************************************/
 %if &prep %then %do;
-    %INCLUDE MAIN("GNBRSmall.sas");
+    %INCLUDE MAIN(gnbr_small);
 %end;
 
 proc casutil incaslib="repositioning" outcaslib="repositioning" sessref="&sessionName";
@@ -116,9 +128,9 @@ data casuser.edges_gnbr_protein_disease;
 run;
 
 /* * * * * * * * * * PROC FACTMAC Embedding * * * * * * * * * */
-%INCLUDE FACTMAC("LoadEdgelist.sas");
-%INCLUDE FACTMAC("SampleNegativeEdgelist.sas");
-%INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
+/* %INCLUDE FACTMAC("LoadEdgelist.sas"); */
+/* %INCLUDE FACTMAC("SampleNegativeEdgelist.sas"); */
+/* %INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
 
 
 /* * * * * * * * * * PROC NETWORK Embedding  * * * * * * * * */
@@ -131,29 +143,28 @@ run;
 /* 3. Drug-Protein and Protein-Protein full     */
 %INCLUDE NETWORK(method3);
 
-/* 4. Drug-Protein, weighted by Protein-Protein */
-
-/* 5. Drug-Protein, Protein-Protein, and Protein-Disease */
-%INCLUDE NETWORK(method5);
+/* 4. Drug-Protein, Protein-Protein, and Protein-Disease */
+%INCLUDE NETWORK(method4);
 
 /* * * * * * * * * * Outputs * * * * * * * * * * * * * * * * */
 %INCLUDE MACROS(candidates_knn);
-%candidates_knn(embeddings=embed.factmac_embeddings,  output=factcandidates);
+/* %candidates_knn(embeddings=embed.factmac_embeddings,  output=factcandidates); */
 %candidates_knn(embeddings=embed.network1_embeddings, output=net1candidates);
 %candidates_knn(embeddings=embed.network2_embeddings, output=net2candidates);
 %candidates_knn(embeddings=embed.network3_embeddings, output=net3candidates);
-%candidates_knn(embeddings=embed.network5_embeddings, output=net5candidates);
+%candidates_knn(embeddings=embed.network4_embeddings, output=net4candidates);
 
 %INCLUDE MACROS(candidates_distance);
-%candidates_distance(embeddings=embed.network5_embeddings, output=net5candidates2);
+%candidates_distance(embeddings=embed.network4_embeddings, output=net4candidates2);
 
 %INCLUDE MACROS(tsne_vary);
-/* %tsne_vary(datain=network1_embeddings, dataout=network1_tsne, start=5, end=50, by=5, maxIters=1); */
-/* %tsne_vary(datain=network2_embeddings, dataout=network2_tsne, start=5, end=50, by=5, maxIters=1); */
-/* %tsne_vary(datain=network3_embeddings, dataout=network3_tsne, start=5, end=50, by=5, maxIters=1, drugsonly=1); */
+%tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=10, by=5, maxIters=1);
+/* %tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=5, end=50, by=5, maxIters=1); */
+/* %tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all_drugsonly, start=5, end=50, by=5, maxIters=1, drugsonly=1); */
+/* %tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all_drugsonly, start=5, end=50, by=5, maxIters=1, drugsonly=1); */
 
 %INCLUDE MACROS(evaluate_ap);
-%evaluate_ap(repo.net5candidates2, repo.truth, distance);
+%evaluate_ap(repo.net4candidates2, repo.truth, distance);
 
 cas mainSession terminate;
 

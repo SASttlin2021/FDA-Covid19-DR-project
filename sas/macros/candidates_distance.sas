@@ -6,12 +6,7 @@
 
 %macro candidates_distance(embeddings, output);
 
-%let sessionName = localsession;
-cas localsession;
-libname casuser cas caslib="casuser";
-libname embed cas caslib="embedding";
-libname public cas caslib="public";
-libname repo cas caslib="repositioning";
+caslib private path='/tmp' libref=private;
 
 data work.fastknn_data;
   set &embeddings;
@@ -25,12 +20,12 @@ data work.fastknn_query;
   where node=&sars_cov_2;
 run;
 
-proc casutil outcaslib="casuser";
+proc casutil outcaslib="private";
     load data=work.fastknn_data replace;
     load data=work.fastknn_query replace;
 quit;
 
-proc fastknn data=casuser.fastknn_data query=casuser.fastknn_query outdist=casuser.fastknn_dist;
+proc fastknn data=private.fastknn_data query=private.fastknn_query outdist=private.fastknn_dist;
   id nodeid;
   input vec_:;
 run;
@@ -43,7 +38,7 @@ proc sql;
 
     create table candidates as
     select nn.*, dl.*
-    from casuser.fastknn_dist as nn
+    from private.fastknn_dist as nn
 		inner join drug_label as dl
 		on nn.ReferenceID = dl.nodeid
     order by Distance;
@@ -52,8 +47,7 @@ quit;
 proc casutil;
   droptable incaslib="repositioning" casdata="&output";
   load data=work.candidates outcaslib="repositioning" casout="&output" promote;
-
-cas &sessionName terminate;
+quit;
 
 proc datasets library=work noprint;
   delete nearest_neighbors;
@@ -61,6 +55,8 @@ proc datasets library=work noprint;
   delete fastknn_query;
 run;
 quit;
+
+caslib private drop;
 
 %mend candidates_distance;
 

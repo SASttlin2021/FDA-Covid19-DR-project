@@ -1,16 +1,18 @@
 %let VIYA4=0;
 
+caslib private datasource=(srctype="path") path="&datapath/intermediate/network2" 
+   sessref=&sessionName libref=private;
 
 /**************************************/
 /* Get Nodes                          */
 /**************************************/
 proc fedsql sessref=&sessionName;
-   create table casuser.nodesDrugs {options replace=true} as 
+   create table private.nodesDrugs {options replace=true} as 
    select distinct a.head as "node"
    from casuser.edges_drugbank_drug_protein as a;
 quit;
 proc fedsql sessref=&sessionName;
-   create table casuser.nodesProteins {options replace=true} as 
+   create table private.nodesProteins {options replace=true} as 
    select distinct a.tail as "node", 1 as "reach"
    from casuser.edges_drugbank_drug_protein as a;
 quit;
@@ -21,12 +23,12 @@ quit;
 /**************************************/
 %if "&VIYA4"="0" %then %do;
    proc fedsql sessref=&sessionName;
-         create table casuser.linksPPInduced {options replace=true} as
+         create table private.linksPPInduced {options replace=true} as
          select a.*
          from casuser.edges_string_protein_protein as a
-         inner join casuser.nodesProteins as b
+         inner join private.nodesProteins as b
          on a.head = b.node
-         inner join casuser.nodesProteins as c
+         inner join private.nodesProteins as c
          on a.tail = c.node
       ;
    quit;
@@ -44,14 +46,14 @@ quit;
    run;
 %end;
 
-data casuser.edges;
-   set casuser.edges_drugbank_drug_protein casuser.linksPPinduced(in=isPP);
+data private.edges;
+   set casuser.edges_drugbank_drug_protein private.linksPPinduced(in=isPP);
    if isPP then category="PPI";
 run;
 
 proc network
-   links    = casuser.edges
-   outNodes = casuser.network2_embeddings;
+   links    = private.edges
+   outNodes = private.network2_embeddings;
    linksvar from=head to=tail;
    nodeSimilarity
       jaccard        = false
@@ -63,14 +65,28 @@ run;
 
 proc casutil;
 	droptable incaslib="embedding" casdata="network2_embeddings" quiet;
-	promote incaslib="casuser" casdata="network2_embeddings" outcaslib="embedding" casout="network2_embeddings";
+	promote incaslib="private" casdata="network2_embeddings" outcaslib="embedding" casout="network2_embeddings";
 	save incaslib="embedding" outcaslib="embedding" casdata="network2_embeddings" casout="network2_embeddings.csv" replace;
 quit;
 
-proc casutil incaslib="casuser";
-	droptable casdata="edges";
-	droptable casdata="linksppinduced";
-	droptable casdata="nodesdrugs";
-	droptable casdata="nodesproteins";
+proc casutil incaslib="private";
+	save casdata="edges" replace;
+	save casdata="linksppinduced" replace;
+	save casdata="nodesdrugs" replace;
+	save casdata="nodesproteins" replace;
 quit;
 
+proc delete data=output.VA3_edges_net2; quit;
+proc delete data=output.VA3_nodes_net2; quit;
+
+data output.VA3_edges_net2(promote=YES);
+   set private.edges;
+run;
+
+data output.VA3_nodes_net2(promote=YES);
+   set private.nodesdrugs private.nodesproteins;
+   entityType = scan(node, 1, ":");
+   entity = scan(node, 2, ":");
+run;
+
+caslib private drop;

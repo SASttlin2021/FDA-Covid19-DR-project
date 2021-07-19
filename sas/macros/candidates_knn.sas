@@ -7,13 +7,9 @@
   @param [out] output - the 2-layer name of the table where the candidate list will be stored
 **/
 %macro candidates_knn(embeddings, output);
-%let embeddings=embed.network5_embeddings;
-%let sessionName = localsession;
-cas localsession;
-libname casuser cas caslib="casuser";
-libname embed cas caslib="embedding";
-libname public cas caslib="public";
-libname repo cas caslib="repositioning";
+%let embeddings=embed.network1_embeddings;
+%let output=net1candidates;
+caslib private path='/tmp' libref=private;
 
 data work.fastknn_data;
     set &embeddings;
@@ -31,22 +27,22 @@ proc sql;
     on d.drugbank_id = t.drugbank_id;
 quit;
 
-proc casutil outcaslib="casuser";
+proc casutil outcaslib="private";
     load data=work.fastknn_data replace;
     load data=work.fastknn_query replace;
 quit;
 
-proc fastknn data=casuser.fastknn_data query=casuser.fastknn_query k=10 outdist=casuser.fastknn_dist;
+proc fastknn data=private.fastknn_data query=private.fastknn_query k=10 outdist=private.fastknn_dist;
     id nodeid;
     input vec_:;
-    output out=casuser.nearest_neighbors;
+    output out=private.nearest_neighbors;
 run;
 
 proc sql;
     create table nearest_neighbors as
     select d.*
-    from casuser.fastknn_dist d
-    where d.ReferenceID not in (select QueryID from casuser.fastknn_dist)
+    from private.fastknn_dist d
+    where d.ReferenceID not in (select QueryID from private.fastknn_dist)
     order by QueryID, Distance;
 quit;
 
@@ -57,7 +53,7 @@ data work.nearest_neighbors;
     seqno + 1;
 run;
 
-data casuser.nearest_neighbors;
+data private.nearest_neighbors;
     set work.nearest_neighbors;
     where seqno <= 10;
 run;
@@ -70,10 +66,10 @@ proc sql;
 
     create table candidates as
     select nn.*, agg.strength
-    from casuser.nearest_neighbors as nn
+    from private.nearest_neighbors as nn
         inner join
         (select ReferenceID, count(*) as strength
-        from casuser.nearest_neighbors
+        from private.nearest_neighbors
         group by ReferenceID) as agg
     on nn.ReferenceID = agg.ReferenceID
     order by strength desc, ReferenceID, Distance;
@@ -95,7 +91,7 @@ proc casutil;
     load data=work.labeled_candidates outcaslib="repositioning" casout="&output" promote;
 quit;
 
-cas &sessionName terminate;
+caslib private drop;
 
 proc datasets library=work noprint;
     delete nearest_neighbors;
