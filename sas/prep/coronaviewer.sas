@@ -35,5 +35,3 @@ proc fedsql sessref=mySession;
     upcase(Coronaviewer.Drug) = upcase(Truth.iName);
 run;
 /*86/251 matches on Truth.csv*/
-
-cas mySession terminate;

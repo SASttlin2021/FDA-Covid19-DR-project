@@ -1,0 +1,26 @@
+
+FILE:   -rw-r--r-- 1 sasdemo sas     51461 Jan  7 12:28 ProteinProteinInteractionsCOVID.xlsx
+SOURCE:
+NOTES:  
+
+
+FILE:   -rw-r--r-- 1 sasdemo sas      3418 Jan 20 11:35 HCoV-associated host proteins.csv
+SOURE:  Dr Liu
+NOTES:  
+
+
+FILE:   -rw-rw-r-- 1 sas     sas 540934917 Jan 20 11:55 9606.protein.links.v11.0.txt
+SOURCE: string-db.org
+NOTES:  human protein-protein interaction
+
+
+FILES:
+ -rw-r--r-- 1 sasdemo sas 10487185963 Jan 20 16:14 idmapping_selected.tab.gz
+ -rw-r--r-- 1 sasdemo sas    36169955 Jan 26 14:20 HUMAN_9606_idmapping.dat.gz
+ -rw-r--r-- 1 sasdemo sas   110933202 Jan 26 14:20 HUMAN_9606_idmapping_selected.tab.gz
+ -rw-r--r-- 1 sasdemo sas        3801 Jan 26 14:20 README_Uniprot_KB.txt
+SOURCE: uniprot.org
+NOTES:
+ human protien mappings in HUMAN_9606 files
+ idmapping_ = wide format 
+ README_Uniprot_KB = column layouts + descriptions of files
