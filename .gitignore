@@ -8,6 +8,8 @@ data/**/*.sashdat
 data/**/*.sas7bdat
 data/**/*.xml
 data/**/*.tsv
+data/**/*.dat
+data/**/*.tab
 
 # results of submitting sas code in background
 /sas/*.log
