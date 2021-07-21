@@ -8,10 +8,11 @@
   @param start, end, by - define perplexity values to try
   @param maxIters - maxIters parameter for proc tsne
   @param drugsonly - only calculate tsne embeddings based on nodes that begin with 'drug'
+  @param [in] drugs - table with drug info (including name, before, after)
   <h4> SAS Macros </h4>
 **/
 
-%macro tsne_vary(embeddings, dataout, start=5, end=50, by=5, maxIters=400, drugsonly=0);
+%macro tsne_vary(embeddings, dataout, start=5, end=50, by=5, maxIters=400, drugsonly=1, drugs=casuser.all_drugs);
 /* You may want to consider setting the maxIters to a low value for runtime. */
 caslib private path='/tmp' libref=private;
 
@@ -53,12 +54,8 @@ data private.tsne_all;
     if scan(node, 1, ":") = 'drug' then drugbank_id = scan(node,2,":");
 run;
 
-data private.tsne_all;
-    merge private.tsne_all public.dbsmallm_truth;
-    by drugbank_id;
-run;
-
-data &dataout(promote=YES);
+proc delete data=&dataout; quit;
+data &dataout;
     set private.tsne_all;
 run;
 

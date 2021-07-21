@@ -1,16 +1,16 @@
 
 
-%macro evaluate_ap(candidates, truth, rankingCol);
+%macro evaluate_ap(candidates, test, rankingCol);
 
-/* %let candidates=repo.net5candidates2; */
-/* %let truth=repo.truth; */
-/* %let rankingCol = distance; */
+%let candidates=repo.net5candidates_ranked;
+%let truth=repo.truth;
+%let rankingCol = distance;
 
 caslib private path='/tmp' libref=private;
 proc sort data=&candidates out=private.candidates;
 	by drugbank_id;
 run;
-proc sort data=&truth out=private.truth;
+proc sort data=&test out=private.truth;
 	by drugbank_id;
 run;
 

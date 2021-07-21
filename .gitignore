@@ -6,6 +6,8 @@ data/**/*.txt
 data/**/*.csv
 data/**/*.sashdat
 data/**/*.sas7bdat
+data/**/*.xml
+data/**/*.tsv
 
 # results of submitting sas code in background
 /sas/*.log
