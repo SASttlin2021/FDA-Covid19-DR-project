@@ -122,9 +122,9 @@ data casuser.edges_gnbr_protein_disease;
 run;
 
 /* * * * * * * * * * PROC FACTMAC Embedding * * * * * * * * * */
-/* %INCLUDE FACTMAC("LoadEdgelist.sas"); */
-/* %INCLUDE FACTMAC("SampleNegativeEdgelist.sas"); */
-/* %INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
+%INCLUDE FACTMAC("LoadEdgelist.sas");
+%INCLUDE FACTMAC("SampleNegativeEdgelist.sas");
+%INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
 
 
 /* * * * * * * * * * PROC NETWORK Embedding  * * * * * * * * */
@@ -181,23 +181,36 @@ run;
 
 ods exclude none;
 
+data casuser.all_drug_candidates;
+	merge casuser.all_drugs repo.net1candidates(in=n1) repo.net2candidates(in=n2)
+          repo.net3candidates(in=n3) repo.net4candidates(in=n4);
+	by drugbank_id;
+	net1=n1; net2=n2; net3=n3; net4=n4;
+	keep drugbank_id name before after net1 net2 net3 net4;
+run;
+
 %INCLUDE MACROS(score_candidates);
-%score_candidates(candidates=repo.net1candidates, all_drugs=casuser.all_drugs);
-%score_candidates(candidates=repo.net2candidates, all_drugs=casuser.all_drugs);
-%score_candidates(candidates=repo.net3candidates, all_drugs=casuser.all_drugs);
-%score_candidates(candidates=repo.net4candidates, all_drugs=casuser.all_drugs);
+%score_candidates(candidates=net1, drugs=casuser.all_drug_candidates);
+%score_candidates(candidates=net2, drugs=casuser.all_drug_candidates);
+%score_candidates(candidates=net3, drugs=casuser.all_drug_candidates);
+%score_candidates(candidates=net4, drugs=casuser.all_drug_candidates);
 
 %INCLUDE MACROS(tsne_vary);
-%tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=50, by=5, maxIters=1);
-%tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=5, end=50, by=5, maxIters=1);
-%tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all, start=5, end=50, by=5, maxIters=1);
-%tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all, start=5, end=50, by=5, maxIters=1);
+%tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=10, by=5, maxIters=1);
+%tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=5, end=10, by=5, maxIters=1);
+%tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all, start=5, end=10, by=5, maxIters=1);
+%tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all, start=5, end=10, by=5, maxIters=1);
 
 %INCLUDE MACROS(label_nodes);
-%label_nodes(embeddings=output.VA1_net1_tsne_all, drugs=casuser.all_drugs, candidates=repo.net1candidates);
-%label_nodes(embeddings=output.VA1_net2_tsne_all, drugs=casuser.all_drugs, candidates=repo.net2candidates);
-%label_nodes(embeddings=output.VA1_net3_tsne_all, drugs=casuser.all_drugs, candidates=repo.net3candidates);
-%label_nodes(embeddings=output.VA1_net4_tsne_all, drugs=casuser.all_drugs, candidates=repo.net4candidates);
+%label_nodes(embeddings=output.VA1_net1_tsne_all, drugs=casuser.all_drug_candidates, candidate=net1);
+%label_nodes(embeddings=output.VA1_net2_tsne_all, drugs=casuser.all_drug_candidates, candidate=net2);
+%label_nodes(embeddings=output.VA1_net3_tsne_all, drugs=casuser.all_drug_candidates, candidate=net3);
+%label_nodes(embeddings=output.VA1_net4_tsne_all, drugs=casuser.all_drug_candidates, candidate=net4);
+
+proc casutil;
+	droptable incaslib="output" casdata="all_drug_candidates" quiet;
+	promote incaslib="casuser" casdata="all_drug_candidates" outcaslib="output" casout="all_drug_candidates";
+run;
 
 %INCLUDE MACROS(candidates_distance);
 %candidates_distance(embeddings=embed.network4_embeddings, output=net4candidates_ranked);
