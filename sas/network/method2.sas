@@ -59,7 +59,6 @@ proc network
       jaccard        = false
       vector         = true
       nSamples       = 10000000
-      convergenceThreshold = 0.001
    ;
 run;
 

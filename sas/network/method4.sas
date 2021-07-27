@@ -10,17 +10,23 @@ data private.edges;
 	set casuser.edges:;
 run;
 
+/* proc fedsql sessref=&sessionName; */
+/* 	drop table private.nodes force; */
+/* 	create table private.nodes as select distinct node from ( */
+/* 		select distinct head as node from private.edges */
+/* 		union */
+/* 		select distinct tail as node from private.edges */
+/* 	) a; */
+/* quit; */
+
 proc fedsql sessref=&sessionName;
 	drop table private.nodes force;
-	create table private.nodes as select distinct node from (
-		select distinct head as node from private.edges
-		union
-		select distinct tail as node from private.edges
-	) a;
+	create table private.head as select distinct head as node from private.edges;
+	create table private.tail as select distinct tail as node from private.edges;
 quit;
 
 data private.nodes;
-	set private.nodes;
+	set private.head private.tail;
 	type = scan(node, 1, ":");
 run;
 
@@ -32,7 +38,6 @@ proc network
       jaccard        = false
       vector         = true
       nSamples       = 10000000
-      convergenceThreshold = 0.001
 	  source = &sars_cov_2 /* Just pick a random one so it doesnt compute every distance */
    ;
 run;

@@ -19,7 +19,7 @@ quit;
 
 data private.edges;
     set casuser.edges_drugbank_drug_protein casuser.edges_string_protein_protein(in=isPP);
-    where head NE '' and tail NE '';
+    if head NE '' and tail NE '';
     if isPP then category="PPI";
 run;
 
@@ -31,7 +31,6 @@ proc network
       jaccard        = false
       vector         = true
       nSamples       = 10000000
-      convergenceThreshold = 0.001
       source = "protein:Q5HYI8" /* Just pick a random one so it doesnt compute every distance */
     ;
 run;

@@ -42,7 +42,7 @@ cas &sessionName;
 /*     - visualization: where tables to be visualized in Visual Analytics go                */
 caslib repositioning datasource=(srctype="path") path="&datapath/repositioning" sessref=&sessionName;
 caslib gnbr          datasource=(srctype="path") path="&datapath/GNBR"          sessref=&sessionName;
-caslib output        datasource=(srctype="path") path="&datapath/output"        sessref=&sessionName;
+/* caslib output        datasource=(srctype="path") path="&datapath/output"        sessref=&sessionName; */
 
 /* Create temporary caslib for saving intermediate data */
 caslib embedding   datasource=(srctype="path") path="&datapath/intermediate/embedding" sessref=&sessionName;
@@ -51,9 +51,9 @@ caslib embedding   datasource=(srctype="path") path="&datapath/intermediate/embe
 libname repo    cas caslib="repositioning";
 libname embed   cas caslib="embedding"    ;
 libname casuser cas caslib="casuser"      ;
-libname public  cas caslib="public"       ;
+/* libname public  cas caslib="public"       ; */
 libname gnbr    cas caslib="gnbr"         ;
-libname output  cas caslib="output"       ;
+libname output  cas caslib="public"       ;
 
 /* * * * * * * * * * Load Data * * * * * * * * * * * * * * * * */
 /****************************************************************************************/
@@ -81,40 +81,39 @@ proc casutil incaslib="gnbr" outcaslib="gnbr" sessref="&sessionName";
         vars=("UniProtID", "SecondEntityDBID");
 quit;
 
-data casuser.edges_drugbank_drug_protein;
+data casuser.edges_drugbank_drug_protein / sessref="&sessionName";
     length head varchar(*) tail varchar(*);
     set repo.DBProteins;
-    where drugbank_id and uniprot_id;
+    if drugbank_id ~= '.' and uniprot_id ~= '.';
     head = cat("drug:",drugbank_id);
     tail = cat("protein:",uniprot_id);
     source = 1;
     keep source head tail;
 run;
 
-data casuser.edges_string_protein_protein;
+data casuser.edges_string_protein_protein / sessref="&sessionName";
     length head varchar(*) tail varchar(*);
     set repo.stringpp;
-    where UniProtID1 and UniProtID2;
+    if UniProtID1 ~= '.' and UniProtID2 ~= '.';
     head = cat("protein:",UniProtID1);
     tail = cat("protein:",UniProtID2);
     source = 2;
     keep source head tail;
 run;
 
-data casuser.edges_cov2_disease_protein;
+data casuser.edges_cov2_disease_protein / sessref="&sessionName";
     length head varchar(*) tail varchar(*);
     set repo.sars_cov_2_proteins;
-    where Preys;
+    if Preys ~= '.';
     head = &sars_cov_2;
     tail = cat("protein:",Preys);
     source = 3;
     keep source head tail;
 run;
 
-data casuser.edges_gnbr_protein_disease;
+data casuser.edges_gnbr_protein_disease / sessref="&sessionName";
     length head varchar(*) tail varchar(*);
     set gnbr.genediseasecomplete;
-/* 	where UniProtID and SecondEntityDBID; */
     head = cat("protein:",UniProtID);
     tail = SecondEntityDBID;
     source = 4;
@@ -122,14 +121,14 @@ data casuser.edges_gnbr_protein_disease;
 run;
 
 /* * * * * * * * * * PROC FACTMAC Embedding * * * * * * * * * */
-%INCLUDE FACTMAC("LoadEdgelist.sas");
-%INCLUDE FACTMAC("SampleNegativeEdgelist.sas");
-%INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
+/* %INCLUDE FACTMAC("LoadEdgelist.sas"); */
+/* %INCLUDE FACTMAC("SampleNegativeEdgelist.sas"); */
+/* %INCLUDE FACTMAC("LearnFactmacEmbeddings.sas"); /* writes to embed.factmac_embeddings */
 
 
 /* * * * * * * * * * PROC NETWORK Embedding  * * * * * * * * */
 /* 1. Drug-Protein Only, Bipartite projection  */
-%INCLUDE NETWORK(method1);
+/* %INCLUDE NETWORK(method1); */
 
 /* 2. Drug-Protein and Protein-Protein subset   */
 %INCLUDE NETWORK(method2);
