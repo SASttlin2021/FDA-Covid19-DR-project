@@ -2,20 +2,16 @@
 
 %macro evaluate_ap(candidates, test, rankingCol);
 
-%let candidates=repo.net5candidates_ranked;
-%let truth=repo.truth;
-%let rankingCol = distance;
-
 caslib private path='/tmp' libref=private;
-proc sort data=&candidates out=private.candidates;
-	by drugbank_id;
-run;
-proc sort data=&test out=private.truth;
-	by drugbank_id;
-run;
+/* proc sort data=&candidates out=private.candidates; */
+/* 	by drugbank_id; */
+/* run; */
+/* proc sort data=&test out=private.truth; */
+/* 	by drugbank_id; */
+/* run; */
 
-data private.merged;
-	merge private.candidates(in=pin) private.truth(in=tin);
+data private.merged / sessref=&sessionName;
+	merge &candidates(in=pin) &test(in=tin);
 	by drugbank_id;
 	in_pred = pin; in_truth=tin;
 	if in_pred;

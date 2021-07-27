@@ -32,7 +32,7 @@ run;
 
 proc sql;
     create table drug_label as
-    select distinct a.nodeid as nodeid, b.name as name, a.drugbank_id as drugbank_id
+    select distinct a.nodeid as nodeid, b.name as name, a.drugbank_id as drugbank_id_char
     from fastknn_data a inner join repo.dbsmallm_truth b
     on a.drugbank_id = b.drugbank_id;
 
@@ -45,9 +45,15 @@ proc sql;
 quit;
 
 proc casutil;
-  droptable incaslib="repositioning" casdata="&output";
-  load data=work.candidates outcaslib="repositioning" casout="&output";
+  droptable incaslib="repositioning" casdata="&output" quiet;
+/*   load data=work.candidates outcaslib="repositioning" casout="&output"; */
 quit;
+
+data repo.&output;
+	set work.candidates;
+	length drugbank_id varchar(*);
+	drugbank_id = drugbank_id_char;
+run;
 
 proc datasets library=work noprint;
   delete nearest_neighbors;

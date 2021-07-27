@@ -13,7 +13,7 @@
 %let prep=0;
 /********************************************/
 
-OPTIONS SOURCE2 MPRINT MPRINTNEST;
+OPTIONS SOURCE2 MPRINT MPRINTNEST CASDATALIMIT=500M;
 
 %let sessionName=mainSession;
 cas &sessionName;
@@ -70,9 +70,10 @@ libname output  cas caslib="public"       ;
 
 proc casutil incaslib="repositioning" outcaslib="repositioning" sessref="&sessionName";
     load casdata="dbProteins.csv" casout="DBProteins" replace;
-    load casdata="dbsmallm_truth.csv" casout="dbsmallm_truth";
+    load casdata="dbSmallM_Truth.csv" casout="dbsmallm_truth" replace;
     load casdata="stringPP.csv" casout="stringpp" replace;
     load casdata="Truth.csv" casout="truth" replace;
+    load casdata="newTruth.csv" casout="newtruth" replace;
     load casdata="sars_cov_2_proteins.csv" casout="sars_cov_2_proteins" replace;
 quit;
 
@@ -149,7 +150,7 @@ proc fedsql sessref=&sessionName;
     select Trail_Drug as drugname,
             iDBID as drugbank_id,
             NewDrug
-    from public.newtruth
+    from repositioning.newtruth
     where ProteinCount > 0;
 
     create table casuser.train {options replace=true} as
@@ -163,7 +164,7 @@ proc fedsql sessref=&sessionName;
     where NewDrug = 1;
 quit;
 
-data casuser.all_drugs;
+data casuser.all_drugs / sessref=&sessionName;
   merge casuser.all_drugs casuser.train(in=intrain) casuser.test(in=intest);
   by drugbank_id;
   before=intrain;
@@ -173,15 +174,15 @@ run;
 
 %INCLUDE MACROS(candidates_knn);
 /* %candidates_knn(embeddings=embed.factmac_embeddings,  output=factcandidates); */
-%candidates_knn(embeddings=embed.network1_embeddings, output=repo.net1candidates, drugs=casuser.all_drugs);
+/* %candidates_knn(embeddings=embed.network1_embeddings, output=repo.net1candidates, drugs=casuser.all_drugs); */
 %candidates_knn(embeddings=embed.network2_embeddings, output=repo.net2candidates, drugs=casuser.all_drugs);
 %candidates_knn(embeddings=embed.network3_embeddings, output=repo.net3candidates, drugs=casuser.all_drugs);
 %candidates_knn(embeddings=embed.network4_embeddings, output=repo.net4candidates, drugs=casuser.all_drugs);
 
 ods exclude none;
 
-data casuser.all_drug_candidates;
-	merge casuser.all_drugs repo.net1candidates(in=n1) repo.net2candidates(in=n2)
+data casuser.all_drug_candidates / sessref=&sessionName;
+	merge casuser.all_drugs /*repo.net1candidates(in=n1)*/ repo.net2candidates(in=n2)
           repo.net3candidates(in=n3) repo.net4candidates(in=n4);
 	by drugbank_id;
 	net1=n1; net2=n2; net3=n3; net4=n4;
@@ -189,19 +190,19 @@ data casuser.all_drug_candidates;
 run;
 
 %INCLUDE MACROS(score_candidates);
-%score_candidates(candidates=net1, drugs=casuser.all_drug_candidates);
+/* %score_candidates(candidates=net1, drugs=casuser.all_drug_candidates); */
 %score_candidates(candidates=net2, drugs=casuser.all_drug_candidates);
 %score_candidates(candidates=net3, drugs=casuser.all_drug_candidates);
 %score_candidates(candidates=net4, drugs=casuser.all_drug_candidates);
 
 %INCLUDE MACROS(tsne_vary);
-%tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=10, by=5, maxIters=1);
+/* %tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=10, by=5, maxIters=1); */
 %tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=5, end=10, by=5, maxIters=1);
 %tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all, start=5, end=10, by=5, maxIters=1);
 %tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all, start=5, end=10, by=5, maxIters=1);
 
 %INCLUDE MACROS(label_nodes);
-%label_nodes(embeddings=output.VA1_net1_tsne_all, drugs=casuser.all_drug_candidates, candidate=net1);
+/* %label_nodes(embeddings=output.VA1_net1_tsne_all, drugs=casuser.all_drug_candidates, candidate=net1); */
 %label_nodes(embeddings=output.VA1_net2_tsne_all, drugs=casuser.all_drug_candidates, candidate=net2);
 %label_nodes(embeddings=output.VA1_net3_tsne_all, drugs=casuser.all_drug_candidates, candidate=net3);
 %label_nodes(embeddings=output.VA1_net4_tsne_all, drugs=casuser.all_drug_candidates, candidate=net4);
