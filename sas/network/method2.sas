@@ -77,6 +77,7 @@ quit;
 
 proc delete data=output.VA3_edges_net2; quit;
 proc delete data=output.VA3_nodes_net2; quit;
+proc delete data=output.VA3_network_net2; quit;
 
 data output.VA3_edges_net2(promote=YES);
    set private.edges;
@@ -86,6 +87,12 @@ data output.VA3_nodes_net2(promote=YES);
    set private.nodesdrugs private.nodesproteins;
    entityType = scan(node, 1, ":");
    entity = scan(node, 2, ":");
+run;
+
+data output.VA3_network_net2(promote=YES);
+   set output.VA3_edges_net2 output.VA3_nodes_net2;
+   if node ~= '' then head = node;
+   keep head tail;
 run;
 
 caslib private drop;

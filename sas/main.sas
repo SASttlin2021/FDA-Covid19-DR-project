@@ -197,9 +197,9 @@ run;
 
 %INCLUDE MACROS(tsne_vary);
 /* %tsne_vary(embeddings=embed.network1_embeddings, dataout=output.VA1_net1_tsne_all, start=5, end=10, by=5, maxIters=1); */
-%tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=5, end=10, by=5, maxIters=1);
-%tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all, start=5, end=10, by=5, maxIters=1);
-%tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all, start=5, end=10, by=5, maxIters=1);
+%tsne_vary(embeddings=embed.network2_embeddings, dataout=output.VA1_net2_tsne_all, start=2, end=3, by=1, maxIters=1);
+%tsne_vary(embeddings=embed.network3_embeddings, dataout=output.VA1_net3_tsne_all, start=2, end=30, by=7, maxIters=1);
+%tsne_vary(embeddings=embed.network4_embeddings, dataout=output.VA1_net4_tsne_all, start=2, end=30, by=7, maxIters=1);
 
 %INCLUDE MACROS(label_nodes);
 /* %label_nodes(embeddings=output.VA1_net1_tsne_all, drugs=casuser.all_drug_candidates, candidate=net1); */
